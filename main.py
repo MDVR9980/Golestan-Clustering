@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
+import os
+import sys
 from tqdm import tqdm
 
 # Persian NLP Libraries
@@ -15,6 +17,32 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import Normalizer as SklearnNormalizer
 from sklearn.metrics import silhouette_score, confusion_matrix
 
+# ==========================================
+# Section 0: Output Configuration
+# ==========================================
+# 1. Create Output Directory
+output_dir = 'output'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# 2. Logger Setup (To save print outputs to file AND show in console)
+class DualLogger(object):
+    def __init__(self, filename):
+        self.terminal = sys.stdout
+        self.log = open(filename, "w", encoding='utf-8')
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
+# Redirect stdout to use our logger
+log_file_path = os.path.join(output_dir, 'clustering_log.txt')
+sys.stdout = DualLogger(log_file_path)
+
 # Plotting Configuration
 sns.set(style="whitegrid")
 
@@ -25,18 +53,22 @@ print("--- Loading and Preprocessing Data ---")
 
 # 1. Load Dataset
 try:
+    # Check if file exists to prevent hard crash if path is wrong
+    if not os.path.exists('data/golestan.csv'):
+        print("Error: 'data/golestan.csv' not found.")
+        sys.exit() # Safe exit
+        
     df = pd.read_csv('data/golestan.csv')
     print(f"Dataset loaded. Shape: {df.shape}")
-except FileNotFoundError:
-    print("Error: 'data/golestan.csv' not found.")
-    exit()
+except Exception as e:
+    print(f"Error loading data: {e}")
+    sys.exit()
 
 # 2. Hazm Setup
 normalizer = Normalizer()
 lemmatizer = Lemmatizer()
 
 # Define Stopwords
-# Combine Hazm's default stopwords with frequent words in Golestan that have low semantic value for clustering
 stop_words = set(stopwords_list())
 custom_stops = {
     'گفت', 'گفتا', 'می‌گفت', 'بگفت', 'گویند', 'گفتم', 'گفتند', 
@@ -90,13 +122,11 @@ tfidf_vectorizer = TfidfVectorizer(min_df=3, max_df=0.9)
 X_tfidf = tfidf_vectorizer.fit_transform(df['clean_text'])
 
 # 2. Dimensionality Reduction (LSA)
-# To reduce noise and improve clustering performance on short texts
 n_components = 15
 lsa = TruncatedSVD(n_components=n_components, random_state=42)
 X_lsa = lsa.fit_transform(X_tfidf)
 
 # 3. Normalization (L2 Normalization)
-# To make Euclidean distance in K-Means behave like Cosine Similarity
 normalizer_vec = SklearnNormalizer(norm='l2')
 X_final = normalizer_vec.fit_transform(X_lsa)
 
@@ -143,7 +173,8 @@ inertia = []
 sil_scores = []
 K_range = range(2, 15)
 
-for k in tqdm(K_range, desc="Calculating Elbow/Silhouette"):
+# Tqdm needs to write to the actual terminal, not our logger wrapper, to avoid file spam
+for k in tqdm(K_range, desc="Calculating Elbow/Silhouette", file=sys.__stdout__):
     km = KMeans(n_clusters=k, random_state=42, n_init=10)
     km.fit(X_final)
     inertia.append(km.inertia_)
@@ -165,6 +196,9 @@ ax2.plot(K_range, sil_scores, 'rs--', label='Silhouette')
 ax2.tick_params(axis='y', labelcolor=color)
 
 plt.title('Optimal k Analysis')
+plt.tight_layout()
+# SAVE before Show
+plt.savefig(os.path.join(output_dir, 'optimal_k_plot.png'), dpi=300)
 plt.show()
 
 # --- Run K-Means with K=11 (as requested) ---
@@ -184,6 +218,9 @@ sns.heatmap(crosstab_opt, annot=True, fmt='d', cmap='Greens')
 plt.title(f'K-Means (K={optimal_k}) vs. Real Chapters (Babs)')
 plt.ylabel('Cluster ID')
 plt.xlabel('Real Chapter (Bab)')
+plt.tight_layout()
+# SAVE before Show
+plt.savefig(os.path.join(output_dir, 'kmeans_11_heatmap.png'), dpi=300)
 plt.show()
 
 get_top_keywords(X_tfidf, df['cluster_opt'], tfidf_vectorizer)
@@ -219,8 +256,19 @@ sns.heatmap(crosstab_db, annot=True, fmt='d', cmap='Reds')
 plt.title('DBSCAN Clusters vs. Real Chapters (-1 is Noise)')
 plt.ylabel('DBSCAN Cluster ID')
 plt.xlabel('Real Chapter (Bab)')
+plt.tight_layout()
+# SAVE before Show
+plt.savefig(os.path.join(output_dir, 'dbscan_heatmap.png'), dpi=300)
 plt.show()
 
 get_top_keywords(X_tfidf, df['cluster_dbscan'], tfidf_vectorizer)
 
-print("\nProcessing Complete.")
+# Save Final DataFrame
+final_csv_path = os.path.join(output_dir, 'golestan_clustered.csv')
+df.to_csv(final_csv_path, index=False)
+print(f"\nProcessing Complete. Data saved to '{final_csv_path}'")
+print(f"Plots and logs saved in '{output_dir}/'")
+
+# Reset stdout before exiting
+sys.stdout.log.close()
+sys.stdout = sys.stdout.terminal

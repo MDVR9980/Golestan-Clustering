@@ -1,0 +1,91 @@
+--- Loading and Preprocessing Data ---
+Dataset loaded. Shape: (290, 2)
+
+--- Vectorization (TF-IDF & LSA) ---
+Final Feature Matrix Shape: (290, 15)
+
+========================================
+   Task 1: K-Means with K=5
+========================================
+
+--- Top 5 Keywords per Cluster ---
+Cluster  0: دشمن, دوست, دوستان, دست, مار
+Cluster  1: سخن, نادان, بهر, بدان, علم
+Cluster  2: ملک, سر, سلطان, پادشاه, نعمت
+Cluster  3: دست, سر, جوان, دل, درویش
+Cluster  4: پسر, پدر, سنگ, خورد, روز
+
+========================================
+   Task 2: Optimal K Analysis
+========================================
+
+Running K-Means with Optimal K=11...
+
+Cluster Sizes (K=11):
+cluster_opt
+0     14
+1     49
+2     31
+3     23
+4     31
+5     18
+6     19
+7     29
+8     43
+9     15
+10    18
+Name: count, dtype: int64
+
+--- Top 5 Keywords per Cluster ---
+Cluster  0: نیک, بدان, راست, میکند, دولت
+Cluster  1: سر, دست, جوان, پیر, دوست
+Cluster  2: ملک, سر, پادشاه, فرمود, زاهد
+Cluster  3: دشمن, دوست, دست, دوستان, مار
+Cluster  4: خورد, دست, بد, سختی, ماه
+Cluster  5: سنگ, خاک, هنر, سگ, لعل
+Cluster  6: پدر, پسر, مادر, فرزند, ترسید
+Cluster  7: نادان, عالم, خردمند, علم, پند
+Cluster  8: درویش, خدا, نان, توانگر, خلق
+Cluster  9: بهر, عابد, قرآن, خورد, قاضی
+Cluster 10: سخن, مگو, گفتن, نادان, فلان
+
+========================================
+   Task 3: DBSCAN Clustering
+========================================
+Running DBSCAN (Eps=0.64, Min_Samples=3)...
+Clusters Found: 13
+Noise Points: 96
+
+Cluster Sizes (DBSCAN):
+cluster_dbscan
+-1     96
+ 0     28
+ 1     99
+ 2      3
+ 3      5
+ 4      4
+ 5     12
+ 6      4
+ 7     14
+ 8     15
+ 9      4
+ 10     3
+ 11     3
+Name: count, dtype: int64
+
+--- Top 5 Keywords per Cluster ---
+Cluster  0: ملک, پادشاه, سر, زاهد, فرمود
+Cluster  1: دست, سخن, سر, دل, بهر
+Cluster  2: زر, جان, بخیل, سپاه, دون
+Cluster  3: سر, امید, فتاده, پیاده, گردن
+Cluster  4: دختر, لب, قاضی, وقت, نابینا
+Cluster  5: نادان, دانا, علم, وگر, عیب
+Cluster  6: خورد, طعام, برآید, خوردن, قضا
+Cluster  7: سنگ, سگ, لعل, خاک, قدر
+Cluster  8: دشمن, دوست, دوستان, مار, دست
+Cluster  9: بدان, نیک, دولت, رحمت, جاه
+Cluster 10: راست, دروغ, نیک, گفتن, جامه
+Cluster 11: دست, جور, بدخو, سیم, دراز
+
+Processing Complete. Data saved to 'output/golestan_clustered.csv'
+Plots and logs saved in 'output/'
